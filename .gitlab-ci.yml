@@ -81,7 +81,7 @@ docker-build:
   - source .${CI_COMMIT_REF_NAME}.env
   - docker login $DOCKER_REPO -u admin -p admin
   script:
-   - cp target/*.war src/main/docker   
+   - cp target/*.jar src/main/docker   
    - docker build -t $DOCKER_REPO/$APP_NAME:$APP_TAG .
    - docker push $DOCKER_REPO/$APP_NAME:$APP_TAG
    
