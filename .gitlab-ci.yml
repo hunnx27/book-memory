@@ -1,0 +1,147 @@
+#spring boot ci/cd by heewoon       
+image: docker:latest
+
+services:
+    - name: docker:dind
+      command: ["--insecure-registry=devops-tools.pmsplus.co.kr:9500"]
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .m2/repository
+    - .cache
+    - target
+    
+variables:
+  DOCKER_DRIVER: overlay
+  SPRING_PROFILES_ACTIVE: gitlab-ci
+  DOCKER_TLS_CERTDIR: "" 
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+
+stages:
+  - build
+  #junit & sonar
+  - test 
+  - package
+  - deploy
+
+# maven:3-jdk-프로젝트자바버전
+maven-build:
+  image: maven:3-jdk-9
+  stage: build
+
+  before_script:
+    - source .${CI_COMMIT_REF_NAME}.env
+    - mvn -version
+  script: "mvn clean install -B -Dmaven.test.skip=true"
+  artifacts:
+    paths:
+      - target/*.jar
+      
+  only:
+#   - develop
+   - test
+  #  - staging
+#   - production
+  except: 
+   - master
+
+
+junit-test:
+  image: maven:3-jdk-9
+  stage: test
+
+  before_script:
+  script: "echo junit test"
+
+  when:
+    manual
+
+sonar-test:
+  image: maven:3-jdk-9
+  stage: test
+
+  before_script:
+    #- source .${CI_COMMIT_REF_NAME}.env
+    - mvn -version
+  script: "mvn clean package sonar:sonar -Dsonar.host.url=http://qms.skcc.com:9000/ -Dsonar.projectKey=demo-springboot-sample"
+        
+  only:
+#   - develop
+   - test
+#   - production
+  except: 
+   - master
+  when:
+    manual
+  
+docker-build:
+  stage: package
+  before_script:
+  - source .${CI_COMMIT_REF_NAME}.env
+  - docker login $DOCKER_REPO -u admin -p admin
+  script:
+   - cp target/*.war src/main/docker   
+   - docker build -t $DOCKER_REPO/$APP_NAME:$APP_TAG .
+   - docker push $DOCKER_REPO/$APP_NAME:$APP_TAG
+   
+  only:
+#   - develop
+   - test
+  #  - staging
+#   - production
+  except: 
+   - master
+
+docker-deploy:
+  stage: deploy
+  before_script:
+    - source .${CI_COMMIT_REF_NAME}.env
+    - apk upgrade && apk update
+    - apk add openssh-client
+    - apk add sshpass
+
+    - "echo 스프링프로필 환경변수 값: $SPRING_ACTIVE_PROFILE"
+
+  script:
+    - sshpass -p "$DEPLOY_SSH_PASS" ssh -o StrictHostKeyChecking=no $DEPLOY_SSH_ID@$DEPLOY_SERVER_IP -p $DEPLOY_SERVER_PORT "echo pims | sudo -S docker login -u admin -p admin $DOCKER_REPO; echo pims | sudo -S docker rm $APP_NAME-$APP_TAG -f; echo pims | sudo -S docker rmi $DOCKER_REPO/$APP_NAME:$APP_TAG -f; echo pims | sudo -S docker pull $DOCKER_REPO/$APP_NAME:$APP_TAG; echo pims | sudo -S docker container run -d --name $APP_NAME-$APP_TAG -p $PORT:$PORT -e SPRING_PROFILES_ACTIVE=$SPRING_ACTIVE_PROFILE $DOCKER_REPO/$APP_NAME:$APP_TAG; echo pims | sudo -S docker logout"
+
+
+  only:
+#   - develop
+   - test
+#   - production
+  except: 
+   - master
+  when:
+    manual
+
+k8s-deploy:
+  stage: deploy
+  before_script:
+    #- source .${CI_COMMIT_REF_NAME}.env
+    - apk upgrade && apk update
+    - apk add openssh-client
+    - apk add sshpass
+#    - sshpass -p "pmis" ssh -o StrictHostKeyChecking=no root@192.168.0.230 "cd ~; touch ssh-connected.txt"
+    - "echo 스프링프로필 환경변수 값: $SPRING_ACTIVE_PROFILE"
+
+    #- sshpass -p "pmis" ssh -o StrictHostKeyChecking=no root@192.168.0.230 "kubectl get all -n pms"
+    - sshpass -p "pims" ssh -o StrictHostKeyChecking=no pims@devops-k8s.pmsplus.co.kr -p 2262 "kubectl get all -n demo"
+        
+  script:
+
+    #scp 를 이용하여 file transfer -r은 여러파일
+    - sshpass -p "pims" scp -r -P 2262 .k8s-demo-test.yml pims@devops-k8s.pmsplus.co.kr:/home/pims/k8s
+    - sshpass -p "pims" ssh -o StrictHostKeyChecking=no pims@devops-k8s.pmsplus.co.kr -p 2262 "kubectl delete -f /home/pims/k8s/.k8s-demo-test.yml -n pims; kubectl apply -f /home/pims/k8s/.k8s-demo-test.yml -n demo --validate=false"
+
+    
+  only:
+#   - develop
+    - test
+#    - staging
+#   - production
+  except: 
+    - master
+  when:
+    manual
