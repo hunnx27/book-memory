@@ -13,7 +13,7 @@ spec:
   - protocol: TCP
     port: 10001
     targetPort: 10001
-    nodePort: 31101
+    nodePort: 32001
 #  type: NodePort
   type: LoadBalancer
 
