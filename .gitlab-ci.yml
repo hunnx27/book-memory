@@ -143,5 +143,5 @@ k8s-deploy:
 #   - production
   except: 
     - master
-  when:
-    manual
+  # when:
+  #   manual
