@@ -46,8 +46,8 @@ maven-build:
   except: 
    - master
 
-  when:
-    manual
+  # when:
+  #   manual
 
 junit-test:
   image: maven:3-jdk-9
@@ -94,8 +94,8 @@ docker-build:
 #   - production
   except: 
    - master
-  when:
-    manual
+  # when:
+  #   manual
 
 docker-deploy:
   stage: deploy
