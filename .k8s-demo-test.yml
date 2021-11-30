@@ -11,9 +11,9 @@ spec:
     app: springboot-sample
   ports:
   - protocol: TCP
+    nodePort: 32001
     port: 10001
     targetPort: 10001
-    nodePort: 32001
 #  type: NodePort
   type: LoadBalancer
 
@@ -49,10 +49,10 @@ spec:
         resources:
           requests:
             cpu: 1000m
-            memory: 4Gi
+            memory: 2Gi
           limits:
             cpu: 2000m
-            memory: 8Gi
+            memory: 4Gi
       imagePullSecrets:
       - name: regcred
   strategy:
