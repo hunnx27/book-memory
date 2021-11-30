@@ -45,7 +45,7 @@ maven-build:
 #   - production
   except: 
    - master
-   
+
   when:
     manual
 
@@ -130,7 +130,7 @@ k8s-deploy:
     #- sshpass -p "pmis" ssh -o StrictHostKeyChecking=no root@192.168.0.230 "cd ~; touch ssh-connected.txt"
     - "echo 스프링프로필 환경변수 값: $SPRING_ACTIVE_PROFILE"
 
-    #- sshpass -p "pims" ssh -o StrictHostKeyChecking=no $K8S_IP -p $K8S_PORT "kubectl get nodes"
+    - sshpass -p "pims" ssh -o StrictHostKeyChecking=no $K8S_IP -p $K8S_PORT "hostname"
 
     # k8s-namespace 생성 (if 없다면 처리 하도올...todo)
     - sshpass -p "pims" scp -r -P $K8S_PORT .k8s-demo-namespace.yml $K8S_IP:/home/pims/k8s
