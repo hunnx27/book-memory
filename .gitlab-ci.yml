@@ -119,23 +119,23 @@ docker-deploy:
 k8s-deploy:
   stage: deploy
   before_script:
-    #- source .${CI_COMMIT_REF_NAME}.env
+    - source .${CI_COMMIT_REF_NAME}.env
     - apk upgrade && apk update
     - apk add openssh-client
     - apk add sshpass
     #- sshpass -p "pmis" ssh -o StrictHostKeyChecking=no root@192.168.0.230 "cd ~; touch ssh-connected.txt"
     - "echo 스프링프로필 환경변수 값: $SPRING_ACTIVE_PROFILE"
 
-    - sshpass -p "pims" ssh -o StrictHostKeyChecking=no $K8S_IP -p $K8S_PORT "kubectl get all -n demo"
+    - sshpass -p "pims" ssh -o StrictHostKeyChecking=no $K8S_IP -p $K8S_PORT "kubectl get nodes"
 
     # k8s-namespace 생성 (if 없다면 처리 하도올...todo)
-    - sshpass -p "pims" scp -r -P 2262 .k8s-demo-namespace.yml $K8S_IP:/home/pims/k8s
+    - sshpass -p "pims" scp -r -P $K8S_PORT .k8s-demo-namespace.yml $K8S_IP:/home/pims/k8s
     - sshpass -p "pims" ssh -o StrictHostKeyChecking=no $K8S_IP -p $K8S_PORT "kubectl apply -f /home/pims/k8s/.k8s-demo-namespace.yml -n demo --validate=false"
         
   script:
 
     # scp 를 이용하여 file transfer -r은 여러파일
-    - sshpass -p "pims" scp -r -P 2262 .k8s-demo-test.yml $K8S_IP:/home/pims/k8s
+    - sshpass -p "pims" scp -r -P $K8S_PORT .k8s-demo-test.yml $K8S_IP:/home/pims/k8s
     - sshpass -p "pims" ssh -o StrictHostKeyChecking=no  $K8S_IP -p $K8S_PORT "kubectl delete -f /home/pims/k8s/.k8s-demo-test.yml -n demo; kubectl apply -f /home/pims/k8s/.k8s-demo-test.yml -n demo --validate=false"
 
     # secret 추가 ?? 어떻게 하징~~~??
