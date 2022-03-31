@@ -66,7 +66,7 @@ sonar-test:
   before_script:
     #- source .${CI_COMMIT_REF_NAME}.env
     - mvn -version
-  script: "mvn clean package sonar:sonar -Dsonar.host.url=http://qms.skcc.com:9000/ -Dsonar.projectKey=demo-springboot-sample"
+  script: "mvn clean package sonar:sonar -Dsonar.host.url=http://localhost:9000/ -Dsonar.projectKey=demo-springboot-sample"
         
   only:
 #   - develop
